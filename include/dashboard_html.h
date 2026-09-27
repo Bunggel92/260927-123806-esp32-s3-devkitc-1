@@ -8,7 +8,7 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QuickPro Dashboard</title>
+<title>QuickShift Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
 *{
@@ -19,9 +19,11 @@ font-family:'Orbitron',sans-serif;
 }
 body{
 background:#050505;
+min-height:100vh;
 display:flex;
 justify-content:center;
-padding:15px;
+align-items:center;
+padding:20px;
 color:white;
 }
 .app{
@@ -29,17 +31,27 @@ width:100%;
 max-width:430px;
 background:#111;
 border-radius:24px;
-padding:18px;
+padding:20px;
 border:2px solid #222;
-box-shadow:0 0 30px rgba(255,0,0,0.2);
+box-shadow:0 0 40px rgba(255,0,0,0.18);
+transition:max-width 0.3s ease, padding 0.3s ease;
 }
 .header{
 text-align:center;
 margin-bottom:20px;
 }
+.header-top{
+display:flex;
+flex-direction:column;
+align-items:center;
+}
+.header-extra{
+display:none;
+}
 .logo{
 font-size:34px;
 font-weight:900;
+letter-spacing:1px;
 }
 .logo span{
 color:#ff2a2a;
@@ -48,24 +60,43 @@ color:#ff2a2a;
 font-size:11px;
 color:#777;
 margin-top:5px;
-letter-spacing:1px;
+letter-spacing:1.5px;
 }
+
+/* DASHBOARD LAYOUT */
+.dash-layout{
+display:flex;
+flex-direction:column;
+}
+.dash-left{
+display:flex;
+flex-direction:column;
+}
+.dash-right{
+display:flex;
+flex-direction:column;
+}
+
 /* RPM GAUGE */
 .top{
 display:flex;
 justify-content:center;
 margin-bottom:14px;
+height:100%;
 }
 .gauge-box{
 background:#181818;
 border-radius:24px;
-padding:20px;
+padding:24px 20px;
 display:flex;
+flex-direction:column;
 justify-content:center;
 align-items:center;
 border:1px solid #2a2a2a;
 width:100%;
-height:230px;
+height:100%;
+min-height:240px;
+position:relative;
 }
 .gauge{
 position:relative;
@@ -107,34 +138,73 @@ letter-spacing:1px;
 font-size:12px;
 color:#777;
 margin-top:6px;
+letter-spacing:1px;
 }
+
+/* SHIFT FORCE METER */
+.force-meter{
+width:85%;
+max-width:260px;
+margin-top:16px;
+display:flex;
+flex-direction:column;
+gap:6px;
+}
+.force-meta{
+display:flex;
+justify-content:space-between;
+font-size:10px;
+color:#777;
+letter-spacing:0.5px;
+}
+.force-track{
+width:100%;
+height:6px;
+background:#222;
+border-radius:3px;
+overflow:hidden;
+}
+.force-fill{
+width:0%;
+height:100%;
+background:linear-gradient(90deg, #00ff88, #ffaa00, #ff2a2a);
+border-radius:3px;
+transition:width 0.1s linear;
+}
+
 /* INFO CARDS */
 .info{
 display:grid;
 grid-template-columns:1fr 1fr;
-gap:10px;
+gap:12px;
 margin-top:12px;
 }
 .info-card{
 background:#181818;
-padding:14px;
-border-radius:16px;
+padding:16px 14px;
+border-radius:18px;
 border:1px solid #2a2a2a;
+transition:border-color 0.2s;
+}
+.info-card:hover{
+border-color:#3a3a3a;
 }
 .info-title{
 font-size:10px;
 color:#777;
 margin-bottom:8px;
-letter-spacing:0.5px;
+letter-spacing:0.8px;
 }
 .info-value{
-font-size:16px;
+font-size:17px;
 font-weight:bold;
+letter-spacing:0.5px;
 }
 .green{color:#00ff88;}
 .red{color:#ff2a2a;}
 .yellow{color:#ffaa00;}
 .blue{color:#00aaff;}
+
 /* BUTTONS */
 .main-btn{
 width:100%;
@@ -146,8 +216,14 @@ background:#ff2a2a;
 color:white;
 font-size:14px;
 font-weight:bold;
+letter-spacing:1px;
 cursor:pointer;
-transition:0.2s;
+transition:all 0.2s ease;
+box-shadow:0 4px 15px rgba(255,42,42,0.25);
+}
+.main-btn:hover{
+background:#ff4444;
+box-shadow:0 6px 20px rgba(255,42,42,0.4);
 }
 .main-btn:active{
 transform:scale(0.98);
@@ -155,7 +231,7 @@ transform:scale(0.98);
 .menu-grid{
 display:grid;
 grid-template-columns:1fr 1fr;
-gap:10px;
+gap:12px;
 margin-top:14px;
 }
 .menu-btn{
@@ -166,14 +242,20 @@ padding:15px;
 border-radius:16px;
 font-size:12px;
 font-weight:bold;
+letter-spacing:0.5px;
 cursor:pointer;
-transition:0.3s;
+transition:all 0.25s ease;
 }
-.menu-btn:hover,.menu-btn:active{
+.menu-btn:hover{
 border-color:#ff2a2a;
 background:#222;
+box-shadow:0 0 12px rgba(255,42,42,0.2);
 }
-/* STATUS */
+.menu-btn:active{
+transform:scale(0.98);
+}
+
+/* STATUS & FOOTER */
 .status{
 margin-top:18px;
 padding:14px;
@@ -184,6 +266,7 @@ text-align:center;
 font-size:12px;
 font-weight:bold;
 color:#00ff88;
+letter-spacing:1px;
 transition:0.3s;
 }
 .status.disconnected{
@@ -196,7 +279,9 @@ margin-top:16px;
 text-align:center;
 font-size:10px;
 color:#666;
+letter-spacing:0.5px;
 }
+
 /* POPUPS */
 .overlay{
 position:fixed;
@@ -204,44 +289,55 @@ top:0;
 left:0;
 width:100%;
 height:100%;
-background:rgba(0,0,0,0.75);
+background:rgba(0,0,0,0.8);
 display:none;
 z-index:998;
-backdrop-filter:blur(3px);
+backdrop-filter:blur(5px);
 }
 .popup{
 position:fixed;
 top:50%;
 left:50%;
 transform:translate(-50%,-50%);
-width:90%;
-max-width:380px;
-max-height:85vh;
+width:92%;
+max-width:400px;
+max-height:86vh;
 overflow-y:auto;
-background:#181818;
+background:#161616;
 border:2px solid #ff2a2a;
 border-radius:24px;
-padding:20px;
+padding:24px;
 display:none;
 z-index:999;
-box-shadow:0 0 40px rgba(255,42,42,0.3);
+box-shadow:0 0 50px rgba(255,42,42,0.35);
 }
 .popup h2{
 text-align:center;
 margin-bottom:20px;
 color:#ff2a2a;
 font-size:18px;
+letter-spacing:1px;
+}
+.popup-grid{
+display:flex;
+flex-direction:column;
+gap:12px;
 }
 .setting-box{
-margin-bottom:16px;
+margin-bottom:8px;
+background:#1c1c1c;
+padding:12px 14px;
+border-radius:14px;
+border:1px solid #2a2a2a;
 }
 .setting-box label{
 display:flex;
 justify-content:space-between;
 align-items:center;
 margin-bottom:8px;
-font-size:12px;
+font-size:11px;
 color:#aaa;
+letter-spacing:0.5px;
 }
 .slider{
 width:100%;
@@ -253,22 +349,26 @@ cursor:pointer;
 }
 .number-input{
 width:80px;
-padding:8px;
-border:1px solid #333;
-border-radius:10px;
+padding:7px;
+border:1px solid #3a3a3a;
+border-radius:8px;
 background:#111;
 color:white;
 text-align:center;
 font-size:13px;
+font-weight:bold;
 }
 .toggle-row{
 display:flex;
 justify-content:space-between;
 align-items:center;
-padding:10px 0;
+padding:12px 14px;
 font-size:12px;
 color:#ccc;
-border-bottom:1px solid #282828;
+background:#1c1c1c;
+border-radius:14px;
+border:1px solid #2a2a2a;
+margin-bottom:8px;
 }
 .toggle-switch{
 position:relative;
@@ -307,109 +407,340 @@ input:checked + .switch-slider:before{
 transform:translateX(22px);
 }
 .select-input{
-padding:8px;
-border-radius:10px;
+padding:8px 10px;
+border-radius:8px;
 background:#111;
 color:white;
-border:1px solid #333;
+border:1px solid #3a3a3a;
 font-size:12px;
-width:130px;
+}
+.popup-actions{
+display:flex;
+flex-direction:column;
+gap:8px;
+margin-top:16px;
 }
 .close-btn{
 width:100%;
-padding:15px;
+padding:14px;
 border:none;
-border-radius:16px;
+border-radius:14px;
 background:#ff2a2a;
 color:white;
 font-weight:bold;
 cursor:pointer;
-margin-top:14px;
 font-size:13px;
+letter-spacing:1px;
+transition:0.2s;
+}
+.close-btn:hover{
+background:#ff4444;
 }
 .cancel-btn{
 width:100%;
-padding:10px;
+padding:11px;
 border:1px solid #444;
-border-radius:16px;
+border-radius:14px;
 background:transparent;
 color:#aaa;
 font-weight:bold;
 cursor:pointer;
-margin-top:8px;
 font-size:11px;
+letter-spacing:1px;
+transition:0.2s;
+}
+.cancel-btn:hover{
+color:white;
+border-color:#777;
+}
+
+/* ========================================================
+   DESKTOP & WIDESCREEN VIEW (Full Racing ECU Cockpit Suite)
+   ======================================================== */
+@media (min-width: 960px) {
+  body{
+    padding: 30px;
+  }
+  .app{
+    max-width: 1240px;
+    width: 95%;
+    padding: 30px 36px;
+    border-radius: 28px;
+  }
+  .header{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #222;
+  }
+  .header-top{
+    align-items: flex-start;
+  }
+  .header-extra{
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .header-badge{
+    padding: 8px 16px;
+    background:#181818;
+    border: 1px solid #333;
+    border-radius: 12px;
+    font-size: 11px;
+    color: #aaa;
+    letter-spacing: 1px;
+  }
+  .header-badge span{
+    color: #ff2a2a;
+    font-weight: bold;
+  }
+  .logo{
+    font-size: 38px;
+  }
+  .sub{
+    font-size: 12px;
+    margin-top: 4px;
+  }
+
+  .dash-layout{
+    display: grid;
+    grid-template-columns: 1fr 1.25fr;
+    gap: 26px;
+    align-items: stretch;
+  }
+  .gauge-box{
+    min-height: 400px;
+    padding: 36px;
+    border-radius: 24px;
+  }
+  .gauge{
+    width: 250px;
+    height: 250px;
+  }
+  .gauge::before{
+    width: 194px;
+    height: 194px;
+  }
+  .rpm{
+    font-size: 52px;
+    letter-spacing: 2px;
+  }
+  .rpm-label{
+    font-size: 15px;
+    margin-top: 8px;
+  }
+  .force-meter{
+    max-width: 320px;
+    margin-top: 24px;
+  }
+  .force-meta{
+    font-size: 11px;
+  }
+  .force-track{
+    height: 8px;
+  }
+
+  .info{
+    margin-top: 0;
+    gap: 16px;
+  }
+  .info-card{
+    padding: 22px 24px;
+    border-radius: 20px;
+  }
+  .info-title{
+    font-size: 12px;
+    margin-bottom: 10px;
+  }
+  .info-value{
+    font-size: 24px;
+  }
+
+  .main-btn{
+    margin-top: 18px;
+    padding: 20px;
+    font-size: 16px;
+    border-radius: 18px;
+  }
+  .menu-grid{
+    margin-top: 16px;
+    gap: 14px;
+  }
+  .menu-btn{
+    padding: 18px;
+    font-size: 13px;
+    border-radius: 18px;
+  }
+
+  .status{
+    margin-top: 24px;
+    padding: 16px;
+    font-size: 13px;
+    border-radius: 18px;
+  }
+  .footer{
+    margin-top: 18px;
+    font-size: 11px;
+  }
+
+  /* Desktop Popup Modals: Dual-column grid */
+  .popup{
+    max-width: 720px;
+    padding: 30px;
+    border-radius: 24px;
+  }
+  .popup h2{
+    font-size: 22px;
+    margin-bottom: 24px;
+  }
+  .popup-grid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .popup-actions{
+    flex-direction: row;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 22px;
+  }
+  .close-btn{
+    width: auto;
+    min-width: 180px;
+    padding: 14px 28px;
+  }
+  .cancel-btn{
+    width: auto;
+    min-width: 120px;
+    padding: 14px 24px;
+  }
+}
+
+/* ========================================================
+   TABLET / MID-SIZE LANDSCAPE
+   ======================================================== */
+@media (min-width: 640px) and (max-width: 959px) {
+  .app{
+    max-width: 780px;
+    padding: 20px 24px;
+  }
+  .dash-layout{
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 18px;
+    align-items: stretch;
+  }
+  .gauge-box{
+    min-height: 280px;
+  }
+  .gauge{
+    width: 190px;
+    height: 190px;
+  }
+  .gauge::before{
+    width: 146px;
+    height: 146px;
+  }
+  .rpm{
+    font-size: 40px;
+  }
+  .info{
+    margin-top: 0;
+    gap: 10px;
+  }
+  .popup{
+    max-width: 580px;
+  }
 }
 </style>
 </head>
 <body>
 <div class="app">
-<div class="header">
-<div class="logo">QUICK<span>PRO</span></div>
-<div class="sub">RACING QUICKSHIFTER ECU</div>
-</div>
+  <div class="header">
+    <div class="header-top">
+      <div class="logo">QUICK<span>SHIFT</span></div>
+      <div class="sub">RACING QUICKSHIFTER ECU</div>
+    </div>
+    <div class="header-extra">
+      <div class="header-badge">FIRMWARE: <span>v2.5 PRO</span></div>
+      <div class="header-badge">DEVICE: <span>ESP32-S3</span></div>
+    </div>
+  </div>
 
-<!-- RPM GAUGE -->
-<div class="top">
-<div class="gauge-box">
-<div class="gauge" id="gaugeElem">
-<div class="rpm-content">
-<div class="rpm" id="rpm">0</div>
-<div class="rpm-label">RPM</div>
-</div>
-</div>
-</div>
-</div>
+  <div class="dash-layout">
+    <!-- LEFT: RPM GAUGE & SENSOR METER -->
+    <div class="dash-left">
+      <div class="top">
+        <div class="gauge-box">
+          <div class="gauge" id="gaugeElem">
+            <div class="rpm-content">
+              <div class="rpm" id="rpm">0</div>
+              <div class="rpm-label">RPM</div>
+            </div>
+          </div>
+          <div class="force-meter">
+            <div class="force-meta">
+              <span>SHIFT FORCE</span>
+              <span id="forceVal">0 ADC</span>
+            </div>
+            <div class="force-track">
+              <div class="force-fill" id="forceFill"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-<!-- INFO CARDS -->
-<div class="info">
-<div class="info-card">
-<div class="info-title">BATTERY</div>
-<div class="info-value yellow" id="valBatt">13.6V</div>
-</div>
-<div class="info-card">
-<div class="info-title">ENGINE TEMP</div>
-<div class="info-value red" id="valTemp">92°C</div>
-</div>
-<div class="info-card">
-<div class="info-title">QUICKSHIFTER</div>
-<div class="info-value green" id="valQS">ACTIVE</div>
-</div>
-<div class="info-card">
-<div class="info-title">LAUNCH CONTROL</div>
-<div class="info-value blue" id="valLC">STANDBY</div>
-</div>
-<div class="info-card">
-<div class="info-title">BACKFIRE SHIFT</div>
-<div class="info-value yellow" id="valBF">ON</div>
-</div>
-<div class="info-card">
-<div class="info-title">PIT LIMITER</div>
-<div class="info-value red" id="valPIT">OFF</div>
-</div>
-</div>
+    <!-- RIGHT: STATUS TILES & ACTION CONTROLS -->
+    <div class="dash-right">
+      <div class="info">
+        <div class="info-card">
+          <div class="info-title">QUICKSHIFTER</div>
+          <div class="info-value green" id="valQS">ACTIVE</div>
+        </div>
+        <div class="info-card">
+          <div class="info-title">LAUNCH CONTROL</div>
+          <div class="info-value blue" id="valLC">STANDBY</div>
+        </div>
+        <div class="info-card">
+          <div class="info-title">BACKFIRE SHIFT</div>
+          <div class="info-value yellow" id="valBF">ON</div>
+        </div>
+        <div class="info-card">
+          <div class="info-title">PIT LIMITER</div>
+          <div class="info-value red" id="valPIT">OFF</div>
+        </div>
+      </div>
 
-<button class="main-btn" onclick="openPopup('QUICKSHIFTER SETUP')">
-SETTINGS QUICKSHIFTER
-</button>
+      <button class="main-btn" onclick="openPopup('QUICKSHIFTER SETUP')">
+        SETTINGS QUICKSHIFTER
+      </button>
 
-<div class="menu-grid">
-<button class="menu-btn" onclick="openPopup('LC SETUP')">RPM SETUP</button>
-<button class="menu-btn" onclick="openPopup('PIT LIMITER')">PIT LIMITER</button>
-<button class="menu-btn" onclick="openPopup('CUT OFF RPM')">CUT OFF TIME</button>
-<button class="menu-btn" onclick="openPopup('SETTING')">SETTING</button>
-</div>
+      <div class="menu-grid">
+        <button class="menu-btn" onclick="openPopup('LC SETUP')">RPM SETUP</button>
+        <button class="menu-btn" onclick="openPopup('PIT LIMITER')">PIT LIMITER</button>
+        <button class="menu-btn" onclick="openPopup('CUT OFF RPM')">CUT OFF TIME</button>
+        <button class="menu-btn" onclick="openPopup('SETTING')">SETTING</button>
+      </div>
+    </div>
+  </div>
 
-<div class="status" id="connStatus">SYSTEM CONNECTED</div>
-<div class="footer">QUICKPRO ECU RACING EDITION v2.5</div>
+  <div class="status" id="connStatus">SYSTEM CONNECTED</div>
+  <div class="footer">QUICKSHIFT ECU RACING EDITION v2.5</div>
 </div>
 
 <div class="overlay" id="overlay" onclick="closePopup()"></div>
 
 <div class="popup" id="popup">
-<h2 id="popupTitle">MENU</h2>
-<div id="popupContent"></div>
-<button class="close-btn" onclick="saveSettings()">SAVE SETTINGS</button>
-<button class="cancel-btn" onclick="closePopup()">CANCEL</button>
+  <h2 id="popupTitle">MENU</h2>
+  <div id="popupContent"></div>
+  <div class="popup-actions">
+    <button class="cancel-btn" onclick="closePopup()">CANCEL</button>
+    <button class="close-btn" onclick="saveSettings()">SAVE SETTINGS</button>
+  </div>
 </div>
 
 <script>
@@ -464,12 +795,12 @@ setInterval(() => {
       document.getElementById('rpm').innerText = data.rpm;
       updateGauge(data.rpm);
 
-      if (data.battery !== undefined) {
-        document.getElementById('valBatt').innerText = data.battery.toFixed(1) + "V";
+      if (data.pressure !== undefined) {
+        document.getElementById('forceVal').innerText = data.pressure + " ADC";
+        let pct = Math.min(100, Math.max(0, (data.pressure / 4095) * 100));
+        document.getElementById('forceFill').style.width = pct + "%";
       }
-      if (data.temp !== undefined) {
-        document.getElementById('valTemp').innerText = data.temp + "°C";
-      }
+
       if (data.qsState) {
         const qsElem = document.getElementById('valQS');
         qsElem.innerText = data.qsState;
@@ -549,31 +880,37 @@ function openPopup(menu) {
 
   if (menu === "QUICKSHIFTER SETUP") {
     content = `
-      ${createSliderBox("minRPM", "TRIGGER MIN RPM", "RPM", 1000, 15000, currentConfig.minRPM, 100)}
-      ${createSliderBox("maxRPM", "TRIGGER MAX RPM", "RPM", 2000, 20000, currentConfig.maxRPM, 100)}
-      ${createSliderBox("cutSens", "FORCE SENSITIVITY", "ADC", 100, 4000, currentConfig.cutSens, 50)}
-      ${createSliderBox("cutHyst", "HYSTERESIS THRESHOLD", "ADC", 50, 2000, currentConfig.cutHyst, 25)}
-      ${createSliderBox("holdTimeLow", "CUT TIME @ LOW RPM", "MS", 10, 200, currentConfig.holdTimeLow)}
-      ${createSliderBox("holdTimeHigh", "CUT TIME @ HIGH RPM", "MS", 10, 200, currentConfig.holdTimeHigh)}
-      ${createSliderBox("retardLow", "IGNITION RETARD LOW", "DEG", 0, 120, currentConfig.retardLow)}
-      ${createSliderBox("retardHigh", "IGNITION RETARD HIGH", "DEG", 0, 120, currentConfig.retardHigh)}
-      ${createSliderBox("deadTime", "DEAD TIME BETWEEN SHIFTS", "MS", 50, 1000, currentConfig.deadTime, 25)}
-      ${createSliderBox("restore", "RESTORE RAMP RATE", "PULSES", 1, 100, currentConfig.restore)}
-      ${createToggle("fullCut", "FULL IGNITION CUT", currentConfig.fullCut)}
+      <div class="popup-grid">
+        ${createSliderBox("minRPM", "TRIGGER MIN RPM", "RPM", 1000, 15000, currentConfig.minRPM, 100)}
+        ${createSliderBox("maxRPM", "TRIGGER MAX RPM", "RPM", 2000, 20000, currentConfig.maxRPM, 100)}
+        ${createSliderBox("cutSens", "FORCE SENSITIVITY", "ADC", 100, 4000, currentConfig.cutSens, 50)}
+        ${createSliderBox("cutHyst", "HYSTERESIS THRESHOLD", "ADC", 50, 2000, currentConfig.cutHyst, 25)}
+        ${createSliderBox("holdTimeLow", "CUT TIME @ LOW RPM", "MS", 10, 200, currentConfig.holdTimeLow)}
+        ${createSliderBox("holdTimeHigh", "CUT TIME @ HIGH RPM", "MS", 10, 200, currentConfig.holdTimeHigh)}
+        ${createSliderBox("retardLow", "IGNITION RETARD LOW", "DEG", 0, 120, currentConfig.retardLow)}
+        ${createSliderBox("retardHigh", "IGNITION RETARD HIGH", "DEG", 0, 120, currentConfig.retardHigh)}
+        ${createSliderBox("deadTime", "DEAD TIME BETWEEN SHIFTS", "MS", 50, 1000, currentConfig.deadTime, 25)}
+        ${createSliderBox("restore", "RESTORE RAMP RATE", "PULSES", 1, 100, currentConfig.restore)}
+      </div>
+      ${createToggle("fullCut", "FULL IGNITION CUT (BACKFIRE)", currentConfig.fullCut)}
     `;
   }
   else if (menu === "LC SETUP") {
     content = `
-      ${createSliderBox("launchRPM", "LAUNCH CONTROL RPM", "RPM", 1500, 16000, currentConfig.launchRPM, 100)}
-      ${createSliderBox("limiterMaxSpeed", "LAUNCH MAX SPEED", "KM/H", 0, 80, currentConfig.limiterMaxSpeed)}
-      ${createSliderBox("limiterRetard", "LIMITER RETARD", "DEG", 0, 90, currentConfig.limiterRetard)}
-      ${createSliderBox("limiterCut", "EXTRA CUT GAIN", "MS", 1, 100, currentConfig.limiterCut)}
+      <div class="popup-grid">
+        ${createSliderBox("launchRPM", "LAUNCH CONTROL RPM", "RPM", 1500, 16000, currentConfig.launchRPM, 100)}
+        ${createSliderBox("limiterMaxSpeed", "LAUNCH MAX SPEED", "KM/H", 0, 80, currentConfig.limiterMaxSpeed)}
+        ${createSliderBox("limiterRetard", "LIMITER RETARD", "DEG", 0, 90, currentConfig.limiterRetard)}
+        ${createSliderBox("limiterCut", "EXTRA CUT GAIN", "MS", 1, 100, currentConfig.limiterCut)}
+      </div>
     `;
   }
   else if (menu === "PIT LIMITER") {
     content = `
-      ${createSliderBox("limiterRPM", "PIT LIMIT RPM", "RPM", 1500, 12000, currentConfig.limiterRPM, 100)}
-      ${createSliderBox("limiterMaxSpeed", "PIT LIMIT SPEED", "KM/H", 10, 120, currentConfig.limiterMaxSpeed)}
+      <div class="popup-grid">
+        ${createSliderBox("limiterRPM", "PIT LIMIT RPM", "RPM", 1500, 12000, currentConfig.limiterRPM, 100)}
+        ${createSliderBox("limiterMaxSpeed", "PIT LIMIT SPEED", "KM/H", 10, 120, currentConfig.limiterMaxSpeed)}
+      </div>
       ${createToggle("limiterAlways", "ALWAYS ARMED (PIT MODE)", currentConfig.limiterAlways)}
       ${createToggle("limiterFullCut", "USE FULL CUT FOR LIMITER", currentConfig.limiterFullCut)}
     `;
@@ -581,42 +918,46 @@ function openPopup(menu) {
   else if (menu === "CUT OFF RPM") {
     const gears = currentConfig.cutTimeGear || [65, 60, 55, 50, 45, 40];
     content = `
-      <div style="font-size:11px;color:#888;margin-bottom:12px;text-align:center;">Individual Gear Cut-off Windows</div>
-      ${createSliderBox("gear1", "GEAR 1", "MS", 20, 120, gears[0])}
-      ${createSliderBox("gear2", "GEAR 2", "MS", 20, 120, gears[1])}
-      ${createSliderBox("gear3", "GEAR 3", "MS", 20, 120, gears[2])}
-      ${createSliderBox("gear4", "GEAR 4", "MS", 20, 120, gears[3])}
-      ${createSliderBox("gear5", "GEAR 5", "MS", 20, 120, gears[4])}
-      ${createSliderBox("gear6", "GEAR 6", "MS", 20, 120, gears[5])}
+      <div style="font-size:12px;color:#888;margin-bottom:12px;text-align:center;">Individual Gear Cut-off Windows</div>
+      <div class="popup-grid">
+        ${createSliderBox("gear1", "GEAR 1", "MS", 20, 120, gears[0])}
+        ${createSliderBox("gear2", "GEAR 2", "MS", 20, 120, gears[1])}
+        ${createSliderBox("gear3", "GEAR 3", "MS", 20, 120, gears[2])}
+        ${createSliderBox("gear4", "GEAR 4", "MS", 20, 120, gears[3])}
+        ${createSliderBox("gear5", "GEAR 5", "MS", 20, 120, gears[4])}
+        ${createSliderBox("gear6", "GEAR 6", "MS", 20, 120, gears[5])}
+      </div>
     `;
   }
   else if (menu === "SETTING") {
     content = `
-      <div class="setting-box">
-        <label>
-          <span>SENSOR INPUT PIN</span>
-          <select id="select_pressureInput" class="select-input">
-            <option value="0" ${currentConfig.pressureInput == 0 ? 'selected' : ''}>Piezo (Pin 13)</option>
-            <option value="1" ${currentConfig.pressureInput == 1 ? 'selected' : ''}>Hall ADC1 (Pin 10)</option>
-            <option value="2" ${currentConfig.pressureInput == 2 ? 'selected' : ''}>Hall ADC2 (Pin 11)</option>
-          </select>
-        </label>
-      </div>
-      <div class="setting-box">
-        <label>
-          <span>IGNITION TIMING SYSTEM</span>
-          <select id="select_wastedSpark" class="select-input">
-            <option value="360" ${currentConfig.wastedSpark == 360 ? 'selected' : ''}>Wasted Spark (360°)</option>
-            <option value="720" ${currentConfig.wastedSpark == 720 ? 'selected' : ''}>Sequential (720°)</option>
-          </select>
-        </label>
+      <div class="popup-grid">
+        <div class="setting-box">
+          <label>
+            <span>SENSOR INPUT PIN</span>
+            <select id="select_pressureInput" class="select-input">
+              <option value="0" ${currentConfig.pressureInput == 0 ? 'selected' : ''}>Piezo (Pin 13)</option>
+              <option value="1" ${currentConfig.pressureInput == 1 ? 'selected' : ''}>Hall ADC1 (Pin 10)</option>
+              <option value="2" ${currentConfig.pressureInput == 2 ? 'selected' : ''}>Hall ADC2 (Pin 11)</option>
+            </select>
+          </label>
+        </div>
+        <div class="setting-box">
+          <label>
+            <span>IGNITION TIMING</span>
+            <select id="select_wastedSpark" class="select-input">
+              <option value="360" ${currentConfig.wastedSpark == 360 ? 'selected' : ''}>Wasted Spark (360°)</option>
+              <option value="720" ${currentConfig.wastedSpark == 720 ? 'selected' : ''}>Sequential (720°)</option>
+            </select>
+          </label>
+        </div>
       </div>
       ${createToggle("wheelSensor", "REAR WHEEL SPEED SENSOR", currentConfig.wheelSensor)}
-      <button class="close-btn" style="background:#555;margin-top:14px;" onclick="resetDefaults()">RESET ALL SETTINGS</button>
+      <button class="close-btn" style="background:#444;margin-top:14px;" onclick="resetDefaults()">RESET ALL SETTINGS</button>
       <div style="margin-top:20px;font-size:11px;color:#777;line-height:1.7;text-align:center;">
-        QUICKPRO ECU RACING EDITION<br>
-        FIRMWARE: v2.5 MODULAR<br>
-        ESP32-S3 CORE ARCHITECTURE
+        QUICKSHIFT RACING ECU SYSTEM<br>
+        FIRMWARE: v2.5 PRO<br>
+        PLATFORM: ESP32-S3 DUAL-CORE
       </div>
     `;
   }
@@ -625,7 +966,6 @@ function openPopup(menu) {
 }
 
 function saveSettings() {
-  // Read fields from active popup
   if (activeMenu === "QUICKSHIFTER SETUP") {
     currentConfig.minRPM = parseInt(document.getElementById("input_minRPM").value);
     currentConfig.maxRPM = parseInt(document.getElementById("input_maxRPM").value);
@@ -667,7 +1007,6 @@ function saveSettings() {
     currentConfig.wheelSensor = document.getElementById("toggle_wheelSensor").checked;
   }
 
-  // Send update to ESP32
   fetch('/api/config', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
