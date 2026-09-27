@@ -81,7 +81,7 @@ struct cfgOptions
   int  limiterMaxSpeed  = 15;    // km/h  [0-1000] Below this road speed, LAUNCH mode is allowed / stays armed
 
   // --- Misc / sensor routing ---
-  int  pressureInput   = 1;     // 0=Piezo, 1=ADC1 (Hall 1), 2=ADC2 (Hall 2) — which input carries the shift-force signal
+  int  pressureInput   = 0;     // 0=Piezo, 1=ADC1 (Hall 1), 2=ADC2 (Hall 2) — which input carries the shift-force signal
   int  buttonInput     = 0;     // 0=None,  1=ADC1, 2=ADC2                  — which input carries the handlebar mode button
   bool wheelSensor     = false; // Enable rear wheel speed sensing (needed for LAUNCH mode's speed gate)
   int  speedScale      = 1528;  // mm [1-20000] Effective wheel circumference incl. sprocket ratio, used for km/h calc
