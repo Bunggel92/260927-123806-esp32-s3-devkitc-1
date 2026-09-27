@@ -709,7 +709,7 @@ border-color:#777;
           <div class="info-title">BACKFIRE SHIFT</div>
           <div class="info-value yellow" id="valBF">ON</div>
         </div>
-        <div class="info-card">
+        <div class="info-card" id="cardPIT" style="cursor:pointer;" onclick="togglePitLimiter()" title="Click to toggle Pit Limiter">
           <div class="info-title">PIT LIMITER</div>
           <div class="info-value red" id="valPIT">OFF</div>
         </div>
@@ -814,7 +814,10 @@ setInterval(() => {
       if (data.pitState) {
         const pitElem = document.getElementById('valPIT');
         pitElem.innerText = data.pitState;
-        pitElem.className = 'info-value ' + (data.pitState === 'ACTIVE' ? 'green' : (data.pitState === 'STANDBY' ? 'yellow' : 'red'));
+        pitElem.className = 'info-value ' + (
+          (data.pitState === 'ACTIVE' || data.pitState === 'CUTTING') ? 'green' :
+          (data.pitState === 'STANDBY' || data.pitState === 'ARMED' || data.pitState === 'ON') ? 'yellow' : 'red'
+        );
       }
       if (data.fullCut !== undefined) {
         document.getElementById('valBF').innerText = data.fullCut ? "ON" : "OFF";
@@ -990,6 +993,11 @@ function saveSettings() {
     currentConfig.limiterMaxSpeed = parseInt(document.getElementById("input_limiterMaxSpeed").value);
     currentConfig.limiterAlways = document.getElementById("toggle_limiterAlways").checked;
     currentConfig.limiterFullCut = document.getElementById("toggle_limiterFullCut").checked;
+    if (!currentConfig.limiterAlways) {
+      const pitElem = document.getElementById('valPIT');
+      pitElem.innerText = "OFF";
+      pitElem.className = "info-value red";
+    }
   }
   else if (activeMenu === "CUT OFF RPM") {
     currentConfig.cutTimeGear = [
@@ -1021,6 +1029,22 @@ function saveSettings() {
     console.error("Save error:", err);
     closePopup();
   });
+}
+
+function togglePitLimiter() {
+  fetch('/api/toggle-pit', {method: 'POST'})
+    .then(res => res.json())
+    .then(data => {
+      if (data.pitState) {
+        const pitElem = document.getElementById('valPIT');
+        pitElem.innerText = data.pitState;
+        pitElem.className = 'info-value ' + (
+          (data.pitState === 'ACTIVE' || data.pitState === 'CUTTING') ? 'green' :
+          (data.pitState === 'STANDBY' || data.pitState === 'ARMED' || data.pitState === 'ON') ? 'yellow' : 'red'
+        );
+      }
+    })
+    .catch(err => console.log('Toggle error', err));
 }
 
 function resetDefaults() {

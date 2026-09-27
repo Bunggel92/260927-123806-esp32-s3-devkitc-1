@@ -146,14 +146,29 @@ static void handleRoot() {
 static void handleStatus() {
   char json[384];
   const char* qsState = shiftingTrig ? "CUTTING" : "ACTIVE";
-  const char* lcState = (limiterState == LAUNCH) ? "ACTIVE" : ((cfg.wheelSensor || cfg.launchRPM) ? "STANDBY" : "OFF");
-  const char* pitState = (limiterState == PIT) ? "ACTIVE" : (cfg.limiterAlways ? "STANDBY" : "OFF");
+  const char* lcState = (limiterState == LAUNCH) ? ((limitingRPM && shiftingTrig) ? "CUTTING" : "ACTIVE") : "OFF";
+  const char* pitState = (limiterState == PIT) ? ((limitingRPM && shiftingTrig) ? "CUTTING" : (cfg.limiterAlways ? "ACTIVE" : "STANDBY")) : "OFF";
 
   snprintf(json, sizeof(json),
     "{\"rpm\":%d,\"qsState\":\"%s\",\"lcState\":\"%s\",\"pitState\":\"%s\",\"fullCut\":%s,\"pressure\":%d,\"speed\":%.1f}",
     lastRPM, qsState, lcState, pitState, cfg.fullCut ? "true" : "false", pressureValue, lastWheelSpeed);
 
   server.send(200, "application/json", json);
+}
+
+static void handleTogglePit() {
+  if (limiterState == PIT) {
+    limiterState = OFF;
+    cfg.limiterAlways = false;
+    limitingRPM = false;
+    shiftingTrig = false;
+    cfg.fullCut = CFG_FULL_CUT_DEFAULT;
+  } else {
+    limiterState = PIT;
+    cfg.limiterAlways = true;
+  }
+  saveConfig();
+  handleStatus();
 }
 
 static void handleGetConfig() {
@@ -199,7 +214,16 @@ static void handlePostConfig() {
   cfg.fullCut         = parseJsonBool(body, "fullCut", cfg.fullCut);
   cfg.wastedSpark     = parseJsonInt(body, "wastedSpark", cfg.wastedSpark);
 
+  bool prevLimiterAlways = cfg.limiterAlways;
   cfg.limiterAlways   = parseJsonBool(body, "limiterAlways", cfg.limiterAlways);
+  if (!cfg.limiterAlways && limiterState == PIT) {
+    limiterState = OFF;
+    limitingRPM = false;
+    shiftingTrig = false;
+    cfg.fullCut = CFG_FULL_CUT_DEFAULT;
+  } else if (cfg.limiterAlways) {
+    limiterState = PIT;
+  }
   cfg.limiterFullCut  = parseJsonBool(body, "limiterFullCut", cfg.limiterFullCut);
   cfg.limiterRPM      = parseJsonInt(body, "limiterRPM", cfg.limiterRPM);
   cfg.launchRPM       = parseJsonInt(body, "launchRPM", cfg.launchRPM);
@@ -242,6 +266,7 @@ void webServerInit() {
   server.on("/api/status", HTTP_GET, handleStatus);
   server.on("/api/config", HTTP_GET, handleGetConfig);
   server.on("/api/config", HTTP_POST, handlePostConfig);
+  server.on("/api/toggle-pit", HTTP_POST, handleTogglePit);
   server.on("/api/reset", HTTP_POST, handleReset);
   server.begin();
 

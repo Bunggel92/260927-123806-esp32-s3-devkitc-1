@@ -184,7 +184,13 @@ void loop()
       }
 
       if (cfg.limiterAlways)
+      {
         limiterState = PIT;
+      }
+      else if (!cfg.buttonInput && limiterState == PIT)
+      {
+        limiterState = OFF;
+      }
 
       lastButtonState = buttonPressed;
 
