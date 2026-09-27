@@ -65,13 +65,13 @@ struct cfgOptions
 
   bool  fullCut      = true;  // [checkbox]        true  = fully cut ignition during a shift
                                //                   false = only retard ignition (softer, no full miss)
-  float wastedSpark  = 360.f; // [checkbox: 360/720] Ignition system type:
+  int wastedSpark  = 360; // [checkbox: 360/720] Ignition system type:
                                //                     360 = wasted spark  (1 ignition pulse per crank revolution)
                                //                     720 = sequential    (1 ignition pulse per 2 crank revolutions)
                                //   (original web option was a checkbox "Wasted Spark Setup": checked -> 360, unchecked -> 720)
 
   // --- 2-step / launch control RPM limiter ---
-  bool limiterAlways    = true;  // [checkbox]     true = limiter is always armed in PIT mode (no button press needed)
+  bool limiterAlways    = false;  // [checkbox]     true = limiter is always armed in PIT mode (no button press needed)
   bool limiterFullCut   = false; // [checkbox]     Use full ignition cut (instead of retard) while the limiter is active
   int  limiterRPM       = 3600;  // 1/min [0-20000] RPM ceiling while in PIT mode
   int  launchRPM        = 2500;  // 1/min [0-20000] RPM ceiling while in LAUNCH mode (holding revs at the line)
@@ -210,7 +210,7 @@ void coilInterrupt(int ch)
     // its normal dwell time, to shift its spark later by currRetard degrees.
     // currRetard is in "degrees / cfg.wastedSpark of a full pulse cycle";
     // scaling by the measured pulse period converts that to microseconds.
-    unsigned long delayForRetard = (currRetard / cfg.wastedSpark) * (lTime - dwellBeginTime[ch]);
+    unsigned long delayForRetard = ((unsigned long)currRetard * (lTime - dwellBeginTime[ch])) / cfg.wastedSpark;
 
     // Gradual recovery: each new ignition pulse (as long as we're not mid-shift)
     // reduces currRetard by currRestore, so ignition timing eases back to
@@ -335,6 +335,12 @@ void setup()
 // ============================================================================
 void loop()
 {
+  static unsigned long lastDebugPrint = 0;
+if (micros() - lastDebugPrint >= 1000000) { // Every 1 second
+  Serial.printf("[ESP32 STATUS] RPM: %d | PressureVal: %d | waitHyst: %d | shiftingTrig: %d\n",
+                lastRPM, pressureValue, waitHyst, shiftingTrig);
+  lastDebugPrint = micros();
+}
   // 1 µs precision (1 MHz)
   currTime = micros();
 
