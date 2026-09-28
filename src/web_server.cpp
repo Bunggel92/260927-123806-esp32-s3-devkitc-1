@@ -171,6 +171,18 @@ static void handleTogglePit() {
   handleStatus();
 }
 
+static void handleToggleLaunch() {
+  if (limiterState == LAUNCH) {
+    limiterState = OFF;
+    limitingRPM = false;
+    shiftingTrig = false;
+    cfg.fullCut = CFG_FULL_CUT_DEFAULT;
+  } else {
+    limiterState = LAUNCH;
+  }
+  handleStatus();
+}
+
 static void handleGetConfig() {
   char json[768];
   snprintf(json, sizeof(json),
@@ -267,6 +279,7 @@ void webServerInit() {
   server.on("/api/config", HTTP_GET, handleGetConfig);
   server.on("/api/config", HTTP_POST, handlePostConfig);
   server.on("/api/toggle-pit", HTTP_POST, handleTogglePit);
+  server.on("/api/toggle-lc", HTTP_POST, handleToggleLaunch);
   server.on("/api/reset", HTTP_POST, handleReset);
   server.begin();
 

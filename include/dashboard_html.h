@@ -184,10 +184,21 @@ background:#181818;
 padding:16px 14px;
 border-radius:18px;
 border:1px solid #2a2a2a;
-transition:border-color 0.2s;
+transition:all 0.2s ease;
 }
 .info-card:hover{
 border-color:#3a3a3a;
+}
+.info-card.interactive{
+cursor:pointer;
+}
+.info-card.interactive:hover{
+border-color:#ff2a2a;
+box-shadow:0 0 15px rgba(255,42,42,0.2);
+transform:translateY(-2px);
+}
+.info-card.interactive:active{
+transform:translateY(0);
 }
 .info-title{
 font-size:10px;
@@ -701,7 +712,7 @@ border-color:#777;
           <div class="info-title">QUICKSHIFTER</div>
           <div class="info-value green" id="valQS">ACTIVE</div>
         </div>
-        <div class="info-card">
+        <div class="info-card interactive" id="cardLC" onclick="toggleLaunchControl()" title="Click to toggle Launch Control">
           <div class="info-title">LAUNCH CONTROL</div>
           <div class="info-value blue" id="valLC">STANDBY</div>
         </div>
@@ -709,7 +720,7 @@ border-color:#777;
           <div class="info-title">BACKFIRE SHIFT</div>
           <div class="info-value yellow" id="valBF">ON</div>
         </div>
-        <div class="info-card" id="cardPIT" style="cursor:pointer;" onclick="togglePitLimiter()" title="Click to toggle Pit Limiter">
+        <div class="info-card interactive" id="cardPIT" onclick="togglePitLimiter()" title="Click to toggle Pit Limiter">
           <div class="info-title">PIT LIMITER</div>
           <div class="info-value red" id="valPIT">OFF</div>
         </div>
@@ -809,7 +820,10 @@ setInterval(() => {
       if (data.lcState) {
         const lcElem = document.getElementById('valLC');
         lcElem.innerText = data.lcState;
-        lcElem.className = 'info-value ' + (data.lcState === 'ACTIVE' ? 'green' : (data.lcState === 'STANDBY' ? 'blue' : 'red'));
+        lcElem.className = 'info-value ' + (
+          (data.lcState === 'ACTIVE' || data.lcState === 'CUTTING') ? 'green' :
+          (data.lcState === 'STANDBY' || data.lcState === 'ARMED' || data.lcState === 'ON') ? 'blue' : 'red'
+        );
       }
       if (data.pitState) {
         const pitElem = document.getElementById('valPIT');
@@ -1045,6 +1059,22 @@ function togglePitLimiter() {
       }
     })
     .catch(err => console.log('Toggle error', err));
+}
+
+function toggleLaunchControl() {
+  fetch('/api/toggle-lc', {method: 'POST'})
+    .then(res => res.json())
+    .then(data => {
+      if (data.lcState) {
+        const lcElem = document.getElementById('valLC');
+        lcElem.innerText = data.lcState;
+        lcElem.className = 'info-value ' + (
+          (data.lcState === 'ACTIVE' || data.lcState === 'CUTTING') ? 'green' :
+          (data.lcState === 'STANDBY' || data.lcState === 'ARMED' || data.lcState === 'ON') ? 'blue' : 'red'
+        );
+      }
+    })
+    .catch(err => console.log('Toggle LC error', err));
 }
 
 function resetDefaults() {
