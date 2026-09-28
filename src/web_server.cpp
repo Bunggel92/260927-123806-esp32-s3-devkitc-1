@@ -3,6 +3,7 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <Preferences.h>
+#include <Update.h>
 
 static WebServer server(80);
 static Preferences prefs;
@@ -292,10 +293,43 @@ void webServerInit() {
   server.on("/api/toggle-pit", HTTP_POST, handleTogglePit);
   server.on("/api/toggle-lc", HTTP_POST, handleToggleLaunch);
   server.on("/api/reset", HTTP_POST, handleReset);
+
+  // OTA Firmware Update Handler
+  server.on("/update", HTTP_POST, []() {
+    server.sendHeader("Connection", "close");
+    int code = Update.hasError() ? 500 : 200;
+    server.send(code, "application/json", Update.hasError() ? "{\"status\":\"error\"}" : "{\"status\":\"success\"}");
+    if (!Update.hasError()) {
+      delay(500);
+      ESP.restart();
+    }
+  }, []() {
+    HTTPUpload& upload = server.upload();
+    if (upload.status == UPLOAD_FILE_START) {
+      Serial.printf("OTA Update: %s\n", upload.filename.c_str());
+      if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
+        Update.printError(Serial);
+      }
+    } else if (upload.status == UPLOAD_FILE_WRITE) {
+      if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
+        Update.printError(Serial);
+      }
+    } else if (upload.status == UPLOAD_FILE_END) {
+      if (Update.end(true)) {
+        Serial.printf("OTA Success: %u bytes\n", upload.totalSize);
+      } else {
+        Update.printError(Serial);
+      }
+    } else if (upload.status == UPLOAD_FILE_ABORTED) {
+      Update.end();
+      Serial.println("OTA Aborted");
+    }
+  });
+
   server.begin();
 
   // Run web server on Core 0 so Core 1 is dedicated to time-critical ignition logic
-  xTaskCreatePinnedToCore(webServerTask, "webServerTask", 4096, NULL, 1, &webTaskHandle, 0);
+  xTaskCreatePinnedToCore(webServerTask, "webServerTask", 8192, NULL, 1, &webTaskHandle, 0);
 }
 
 void webServerHandle() {

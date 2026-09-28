@@ -465,6 +465,58 @@ color:white;
 border-color:#777;
 }
 
+.ota-box{
+background:#141414;
+border:1px solid #2a2a2a;
+border-radius:16px;
+padding:20px;
+text-align:center;
+}
+.ota-label{
+display:block;
+font-size:12px;
+color:#aaa;
+margin-bottom:14px;
+letter-spacing:1px;
+}
+.ota-input{
+display:block;
+width:100%;
+padding:14px;
+background:#1a1a1a;
+border:1px dashed #444;
+border-radius:12px;
+color:#ddd;
+font-size:13px;
+cursor:pointer;
+box-sizing:border-box;
+}
+.ota-progress{
+margin-top:18px;
+display:none;
+}
+.ota-track{
+width:100%;
+height:14px;
+background:#111;
+border-radius:8px;
+overflow:hidden;
+border:1px solid #333;
+}
+.ota-fill{
+height:100%;
+width:0%;
+background:linear-gradient(90deg, #ff8800, #00ff88);
+transition:width 0.2s ease;
+}
+.ota-msg{
+font-size:12px;
+color:#aaa;
+margin-top:10px;
+font-weight:bold;
+letter-spacing:1px;
+}
+
 /* ========================================================
    DESKTOP & WIDESCREEN VIEW (Full Racing ECU Cockpit Suite)
    ======================================================== */
@@ -734,7 +786,7 @@ border-color:#777;
         <button class="menu-btn" onclick="openPopup('LC SETUP')">RPM SETUP</button>
         <button class="menu-btn" onclick="openPopup('PIT LIMITER')">PIT LIMITER</button>
         <button class="menu-btn" onclick="openPopup('CUT OFF RPM')">CUT OFF TIME</button>
-        <button class="menu-btn" onclick="openPopup('SETTING')">SETTING</button>
+        <button class="menu-btn" onclick="openPopup('SETTINGS')">SETTINGS</button>
       </div>
     </div>
   </div>
@@ -748,7 +800,7 @@ border-color:#777;
 <div class="popup" id="popup">
   <h2 id="popupTitle">MENU</h2>
   <div id="popupContent"></div>
-  <div class="popup-actions">
+  <div class="popup-actions" id="popupActions">
     <button class="cancel-btn" onclick="closePopup()">CANCEL</button>
     <button class="close-btn" onclick="saveSettings()">SAVE SETTINGS</button>
   </div>
@@ -894,9 +946,31 @@ function openPopup(menu) {
   document.getElementById("overlay").style.display = "block";
   document.getElementById("popupTitle").innerHTML = menu;
 
+  const actions = document.getElementById("popupActions");
+  if (actions) actions.style.display = "";
+
   let content = "";
 
-  if (menu === "QUICKSHIFTER SETUP") {
+  if (menu === "OTA UPDATE") {
+    if (actions) actions.style.display = "none";
+    content = `
+      <div class="ota-box">
+        <div class="ota-label">SELECT FIRMWARE BINARY (.bin)</div>
+        <input type="file" id="otaFileInput" accept=".bin" class="ota-input">
+        <div class="ota-progress" id="otaProgressBox">
+          <div class="ota-track">
+            <div class="ota-fill" id="otaBarFill"></div>
+          </div>
+          <div class="ota-msg" id="otaStatusText">0%</div>
+        </div>
+      </div>
+      <div style="margin-top:20px;display:flex;flex-direction:column;gap:10px;">
+        <button class="close-btn" id="otaBtnUpdate" style="background:#00aaff;width:100%;" onclick="startOtaUpdate()">UPDATE</button>
+        <button class="cancel-btn" id="otaBtnCancel" style="width:100%;" onclick="openPopup('SETTINGS')">CANCEL</button>
+      </div>
+    `;
+  }
+  else if (menu === "QUICKSHIFTER SETUP") {
     content = `
       <div class="popup-grid">
         ${createSliderBox("minRPM", "TRIGGER MIN RPM", "RPM", 1000, 15000, currentConfig.minRPM, 100)}
@@ -948,7 +1022,7 @@ function openPopup(menu) {
       </div>
     `;
   }
-  else if (menu === "SETTING") {
+  else if (menu === "SETTINGS" || menu === "SETTING") {
     content = `
       <div class="popup-grid">
         <div class="setting-box">
@@ -972,7 +1046,8 @@ function openPopup(menu) {
         </div>
       </div>
       ${createToggle("wheelSensor", "REAR WHEEL SPEED SENSOR", currentConfig.wheelSensor)}
-      <button class="close-btn" style="background:#444;margin-top:14px;" onclick="resetDefaults()">RESET ALL SETTINGS</button>
+      <button class="main-btn" style="background:#00aaff;margin-top:14px;color:#fff;" onclick="openPopup('OTA UPDATE')">FIRMWARE OTA UPDATE</button>
+      <button class="close-btn" style="background:#444;margin-top:10px;" onclick="resetDefaults()">RESET ALL SETTINGS</button>
       <div style="margin-top:20px;font-size:11px;color:#777;line-height:1.7;text-align:center;">
         QUICKSHIFT RACING ECU SYSTEM<br>
         FIRMWARE: v2.5 PRO<br>
@@ -1037,7 +1112,7 @@ function saveSettings() {
       parseInt(document.getElementById("input_gear6").value)
     ];
   }
-  else if (activeMenu === "SETTING") {
+  else if (activeMenu === "SETTINGS" || activeMenu === "SETTING") {
     currentConfig.pressureInput = parseInt(document.getElementById("select_pressureInput").value);
     currentConfig.wastedSpark = parseInt(document.getElementById("select_wastedSpark").value);
     currentConfig.wheelSensor = document.getElementById("toggle_wheelSensor").checked;
@@ -1057,6 +1132,101 @@ function saveSettings() {
     console.error("Save error:", err);
     closePopup();
   });
+}
+
+function startOtaUpdate() {
+  const fileInput = document.getElementById("otaFileInput");
+  if (!fileInput.files || fileInput.files.length === 0) {
+    alert("Please select a firmware (.bin) file first!");
+    return;
+  }
+
+  const file = fileInput.files[0];
+  const progressBox = document.getElementById("otaProgressBox");
+  const barFill = document.getElementById("otaBarFill");
+  const statusText = document.getElementById("otaStatusText");
+  const btnUpdate = document.getElementById("otaBtnUpdate");
+  const btnCancel = document.getElementById("otaBtnCancel");
+
+  progressBox.style.display = "block";
+  btnUpdate.disabled = true;
+  btnUpdate.style.opacity = "0.5";
+  btnUpdate.style.cursor = "not-allowed";
+  btnCancel.disabled = true;
+  btnCancel.style.opacity = "0.5";
+  btnCancel.style.cursor = "not-allowed";
+  fileInput.disabled = true;
+
+  statusText.innerText = "UPLOADING: 0%";
+  barFill.style.width = "0%";
+
+  const formData = new FormData();
+  formData.append("update", file);
+
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST", "/update", true);
+
+  xhr.upload.addEventListener("progress", (e) => {
+    if (e.lengthComputable) {
+      const pct = Math.round((e.loaded / e.total) * 100);
+      barFill.style.width = pct + "%";
+      statusText.innerText = "UPLOADING: " + pct + "%";
+      if (pct >= 100) {
+        statusText.innerText = "FLASHING FIRMWARE...";
+      }
+    }
+  });
+
+  xhr.onload = function() {
+    let success = false;
+    try {
+      const res = JSON.parse(xhr.responseText);
+      if (res.status === "success") success = true;
+    } catch (e) {
+      if (xhr.status === 200) success = true;
+    }
+
+    if (xhr.status === 200 && success) {
+      barFill.style.width = "100%";
+      barFill.style.background = "#00ff88";
+      let countdown = 6;
+      statusText.innerHTML = `<span style="color:#00ff88;">UPDATE COMPLETE! REBOOTING (${countdown}s)...</span>`;
+      const interval = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+          statusText.innerHTML = `<span style="color:#00ff88;">UPDATE COMPLETE! REBOOTING (${countdown}s)...</span>`;
+        } else {
+          clearInterval(interval);
+          statusText.innerHTML = `<span style="color:#00ff88;">RECONNECTING...</span>`;
+          window.location.reload();
+        }
+      }, 1000);
+    } else {
+      barFill.style.background = "#ff2a2a";
+      statusText.innerHTML = `<span style="color:#ff2a2a;">UPDATE FAILED! PLEASE RETRY</span>`;
+      btnUpdate.disabled = false;
+      btnUpdate.style.opacity = "1";
+      btnUpdate.style.cursor = "pointer";
+      btnCancel.disabled = false;
+      btnCancel.style.opacity = "1";
+      btnCancel.style.cursor = "pointer";
+      fileInput.disabled = false;
+    }
+  };
+
+  xhr.onerror = function() {
+    barFill.style.background = "#ff2a2a";
+    statusText.innerHTML = `<span style="color:#ff2a2a;">UPDATE FAILED: CONNECTION LOST</span>`;
+    btnUpdate.disabled = false;
+    btnUpdate.style.opacity = "1";
+    btnUpdate.style.cursor = "pointer";
+    btnCancel.disabled = false;
+    btnCancel.style.opacity = "1";
+    btnCancel.style.cursor = "pointer";
+    fileInput.disabled = false;
+  };
+
+  xhr.send(formData);
 }
 
 function togglePitLimiter() {
@@ -1106,6 +1276,8 @@ function resetDefaults() {
 function closePopup() {
   document.getElementById("popup").style.display = "none";
   document.getElementById("overlay").style.display = "none";
+  const actions = document.getElementById("popupActions");
+  if (actions) actions.style.display = "";
 }
 </script>
 </body>
