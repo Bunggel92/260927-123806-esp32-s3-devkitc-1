@@ -192,17 +192,6 @@ static void handleToggleLaunch() {
   handleStatus();
 }
 
-static void handleToggleLaunch() {
-  if (limiterState == LAUNCH) {
-    limiterState = OFF;
-    limitingRPM = false;
-    shiftingTrig = false;
-    cfg.fullCut = CFG_FULL_CUT_DEFAULT;
-  } else {
-    limiterState = LAUNCH;
-  }
-  handleStatus();
-}
 
 static void handleGetConfig() {
   char json[768];
