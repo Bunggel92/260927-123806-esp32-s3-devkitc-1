@@ -67,6 +67,7 @@ void loadConfig() {
   cfg.wastedSpark     = prefs.getInt("wastedSpk", cfg.wastedSpark);
 
   cfg.limiterAlways   = prefs.getBool("limAlways", cfg.limiterAlways);
+  cfg.launchEnabled   = prefs.getBool("launchEn", cfg.launchEnabled);
   cfg.limiterFullCut  = prefs.getBool("limFullCut", cfg.limiterFullCut);
   cfg.limiterRPM      = prefs.getInt("limRPM", cfg.limiterRPM);
   cfg.launchRPM       = prefs.getInt("launchRPM", cfg.launchRPM);
@@ -88,6 +89,8 @@ void loadConfig() {
   }
 
   prefs.end();
+
+  limiterState = cfg.limiterAlways ? PIT : (cfg.launchEnabled ? LAUNCH : OFF);
 }
 
 void saveConfig() {
@@ -108,6 +111,7 @@ void saveConfig() {
   prefs.putInt("wastedSpk", cfg.wastedSpark);
 
   prefs.putBool("limAlways", cfg.limiterAlways);
+  prefs.putBool("launchEn", cfg.launchEnabled);
   prefs.putBool("limFullCut", cfg.limiterFullCut);
   prefs.putInt("limRPM", cfg.limiterRPM);
   prefs.putInt("launchRPM", cfg.launchRPM);
@@ -137,6 +141,9 @@ void resetConfig() {
   prefs.end();
 
   cfg = cfgOptions();
+  limiterState = cfg.limiterAlways ? PIT : (cfg.launchEnabled ? LAUNCH : OFF);
+  limitingRPM = false;
+  shiftingTrig = false;
 }
 
 static void handleRoot() {
@@ -146,8 +153,8 @@ static void handleRoot() {
 static void handleStatus() {
   char json[384];
   const char* qsState = shiftingTrig ? "CUTTING" : "ACTIVE";
-  const char* lcState = (limiterState == LAUNCH) ? ((limitingRPM && shiftingTrig) ? "CUTTING" : "ACTIVE") : "OFF";
-  const char* pitState = (limiterState == PIT) ? ((limitingRPM && shiftingTrig) ? "CUTTING" : (cfg.limiterAlways ? "ACTIVE" : "STANDBY")) : "OFF";
+  const char* lcState = (limiterState == LAUNCH && limitingRPM && shiftingTrig) ? "CUTTING" : (cfg.launchEnabled ? "STANDBY" : "OFF");
+  const char* pitState = (cfg.limiterAlways || limiterState == PIT) ? ((limitingRPM && shiftingTrig) ? "CUTTING" : "ACTIVE") : "OFF";
 
   snprintf(json, sizeof(json),
     "{\"rpm\":%d,\"qsState\":\"%s\",\"lcState\":\"%s\",\"pitState\":\"%s\",\"fullCut\":%s,\"pressure\":%d,\"speed\":%.1f}",
@@ -157,29 +164,31 @@ static void handleStatus() {
 }
 
 static void handleTogglePit() {
-  if (limiterState == PIT) {
-    limiterState = OFF;
+  if (cfg.limiterAlways || limiterState == PIT) {
     cfg.limiterAlways = false;
+    limiterState = cfg.launchEnabled ? LAUNCH : OFF;
     limitingRPM = false;
     shiftingTrig = false;
     cfg.fullCut = CFG_FULL_CUT_DEFAULT;
   } else {
-    limiterState = PIT;
     cfg.limiterAlways = true;
+    limiterState = PIT;
   }
   saveConfig();
   handleStatus();
 }
 
 static void handleToggleLaunch() {
-  if (limiterState == LAUNCH) {
-    limiterState = OFF;
+  cfg.launchEnabled = !cfg.launchEnabled;
+  if (!cfg.launchEnabled && limiterState == LAUNCH) {
+    limiterState = cfg.limiterAlways ? PIT : OFF;
     limitingRPM = false;
     shiftingTrig = false;
     cfg.fullCut = CFG_FULL_CUT_DEFAULT;
-  } else {
+  } else if (cfg.launchEnabled && !cfg.limiterAlways) {
     limiterState = LAUNCH;
   }
+  saveConfig();
   handleStatus();
 }
 
@@ -188,7 +197,7 @@ static void handleGetConfig() {
   snprintf(json, sizeof(json),
     "{\"retardLow\":%d,\"retardHigh\":%d,\"restore\":%d,\"minRPM\":%d,\"maxRPM\":%d,"
     "\"holdTimeLow\":%d,\"holdTimeHigh\":%d,\"deadTime\":%d,\"cutSens\":%d,\"cutHyst\":%d,"
-    "\"fullCut\":%s,\"wastedSpark\":%d,\"limiterAlways\":%s,\"limiterFullCut\":%s,"
+    "\"fullCut\":%s,\"wastedSpark\":%d,\"limiterAlways\":%s,\"launchEnabled\":%s,\"limiterFullCut\":%s,"
     "\"limiterRPM\":%d,\"launchRPM\":%d,\"limiterCut\":%d,\"limiterRetard\":%d,"
     "\"limiterDiv\":%d,\"limiterMaxSpeed\":%d,\"pressureInput\":%d,\"buttonInput\":%d,"
     "\"wheelSensor\":%s,\"speedScale\":%d,\"sensorPulses\":%d,"
@@ -196,7 +205,7 @@ static void handleGetConfig() {
     cfg.retardLow, cfg.retardHigh, cfg.restore, cfg.minRPM, cfg.maxRPM,
     cfg.holdTimeLow, cfg.holdTimeHigh, cfg.deadTime, cfg.cutSens, cfg.cutHyst,
     cfg.fullCut ? "true" : "false", cfg.wastedSpark,
-    cfg.limiterAlways ? "true" : "false", cfg.limiterFullCut ? "true" : "false",
+    cfg.limiterAlways ? "true" : "false", cfg.launchEnabled ? "true" : "false", cfg.limiterFullCut ? "true" : "false",
     cfg.limiterRPM, cfg.launchRPM, cfg.limiterCut, cfg.limiterRetard,
     cfg.limiterDiv, cfg.limiterMaxSpeed, cfg.pressureInput, cfg.buttonInput,
     cfg.wheelSensor ? "true" : "false", cfg.speedScale, cfg.sensorPulses,
@@ -228,8 +237,9 @@ static void handlePostConfig() {
 
   bool prevLimiterAlways = cfg.limiterAlways;
   cfg.limiterAlways   = parseJsonBool(body, "limiterAlways", cfg.limiterAlways);
+  cfg.launchEnabled   = parseJsonBool(body, "launchEnabled", cfg.launchEnabled);
   if (!cfg.limiterAlways && limiterState == PIT) {
-    limiterState = OFF;
+    limiterState = cfg.launchEnabled ? LAUNCH : OFF;
     limitingRPM = false;
     shiftingTrig = false;
     cfg.fullCut = CFG_FULL_CUT_DEFAULT;

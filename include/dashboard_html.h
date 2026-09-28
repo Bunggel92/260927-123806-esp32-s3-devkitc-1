@@ -722,7 +722,7 @@ border-color:#777;
         </div>
         <div class="info-card interactive" id="cardPIT" onclick="togglePitLimiter()" title="Click to toggle Pit Limiter">
           <div class="info-title">PIT LIMITER</div>
-          <div class="info-value red" id="valPIT">OFF</div>
+          <div class="info-value green" id="valPIT">ACTIVE</div>
         </div>
       </div>
 
@@ -768,7 +768,8 @@ let currentConfig = {
   cutHyst: 500,
   fullCut: true,
   wastedSpark: 360,
-  limiterAlways: false,
+  limiterAlways: true,
+  launchEnabled: true,
   limiterFullCut: false,
   limiterRPM: 3600,
   launchRPM: 2500,
@@ -920,6 +921,7 @@ function openPopup(menu) {
         ${createSliderBox("limiterRetard", "LIMITER RETARD", "DEG", 0, 90, currentConfig.limiterRetard)}
         ${createSliderBox("limiterCut", "EXTRA CUT GAIN", "MS", 1, 100, currentConfig.limiterCut)}
       </div>
+      ${createToggle("launchEnabled", "ENABLE LAUNCH CONTROL (STANDBY)", currentConfig.launchEnabled)}
     `;
   }
   else if (menu === "PIT LIMITER") {
@@ -1001,14 +1003,26 @@ function saveSettings() {
     currentConfig.limiterMaxSpeed = parseInt(document.getElementById("input_limiterMaxSpeed").value);
     currentConfig.limiterRetard = parseInt(document.getElementById("input_limiterRetard").value);
     currentConfig.limiterCut = parseInt(document.getElementById("input_limiterCut").value);
+    currentConfig.launchEnabled = document.getElementById("toggle_launchEnabled").checked;
+    const lcElem = document.getElementById('valLC');
+    if (currentConfig.launchEnabled) {
+      lcElem.innerText = "STANDBY";
+      lcElem.className = "info-value blue";
+    } else {
+      lcElem.innerText = "OFF";
+      lcElem.className = "info-value red";
+    }
   }
   else if (activeMenu === "PIT LIMITER") {
     currentConfig.limiterRPM = parseInt(document.getElementById("input_limiterRPM").value);
     currentConfig.limiterMaxSpeed = parseInt(document.getElementById("input_limiterMaxSpeed").value);
     currentConfig.limiterAlways = document.getElementById("toggle_limiterAlways").checked;
     currentConfig.limiterFullCut = document.getElementById("toggle_limiterFullCut").checked;
-    if (!currentConfig.limiterAlways) {
-      const pitElem = document.getElementById('valPIT');
+    const pitElem = document.getElementById('valPIT');
+    if (currentConfig.limiterAlways) {
+      pitElem.innerText = "ACTIVE";
+      pitElem.className = "info-value green";
+    } else {
       pitElem.innerText = "OFF";
       pitElem.className = "info-value red";
     }

@@ -25,7 +25,8 @@ struct cfgOptions {
   int wastedSpark     = 360;
 
   // 2-step / Launch control / Pit limiter settings
-  bool limiterAlways  = false;
+  bool limiterAlways  = true;
+  bool launchEnabled  = true;
   bool limiterFullCut = false;
   int limiterRPM      = 3600;
   int launchRPM       = 2500;

@@ -175,9 +175,9 @@ void loop()
             limiterState = OFF;
             break;
           case OFF:
-            if (lastWheelSpeed < cfg.limiterMaxSpeed && cfg.wheelSensor)
+            if (cfg.launchEnabled && lastWheelSpeed < cfg.limiterMaxSpeed && cfg.wheelSensor)
               limiterState = LAUNCH;
-            else
+            else if (cfg.limiterAlways)
               limiterState = PIT;
             break;
         }
@@ -189,7 +189,7 @@ void loop()
       }
       else if (!cfg.buttonInput && limiterState == PIT)
       {
-        limiterState = OFF;
+        limiterState = cfg.launchEnabled ? LAUNCH : OFF;
       }
 
       lastButtonState = buttonPressed;
@@ -221,10 +221,10 @@ void loop()
       switch (limiterState)
       {
         case LAUNCH:
-          if (lastWheelSpeed > cfg.limiterMaxSpeed)
+          if (!cfg.launchEnabled || (cfg.wheelSensor && lastWheelSpeed > cfg.limiterMaxSpeed))
             limiterState = OFF;
 
-          if (cfg.launchRPM && lastRPM > cfg.launchRPM && !shiftingTrig)
+          if (cfg.launchEnabled && cfg.launchRPM && lastRPM > cfg.launchRPM && !shiftingTrig)
           {
             shiftingTrig = true;
             limitingRPM = true;
